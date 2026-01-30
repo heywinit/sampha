@@ -9,38 +9,208 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkspaceRouteImport } from './routes/$workspace'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkspaceIndexRouteImport } from './routes/$workspace.index'
+import { Route as WorkspaceTimelineRouteImport } from './routes/$workspace.timeline'
+import { Route as WorkspaceSettingsRouteImport } from './routes/$workspace.settings'
+import { Route as WorkspaceInboxRouteImport } from './routes/$workspace.inbox'
+import { Route as WorkspaceCalendarRouteImport } from './routes/$workspace.calendar'
+import { Route as WorkspaceProjectsIndexRouteImport } from './routes/$workspace.projects.index'
+import { Route as WorkspaceProjectsProjectIdRouteImport } from './routes/$workspace.projects.$projectId'
+import { Route as WorkspaceProjectsProjectIdIndexRouteImport } from './routes/$workspace.projects.$projectId.index'
+import { Route as WorkspaceProjectsProjectIdTimelineRouteImport } from './routes/$workspace.projects.$projectId.timeline'
+import { Route as WorkspaceProjectsProjectIdTasksRouteImport } from './routes/$workspace.projects.$projectId.tasks'
+import { Route as WorkspaceProjectsProjectIdSettingsRouteImport } from './routes/$workspace.projects.$projectId.settings'
+import { Route as WorkspaceProjectsProjectIdKanbanRouteImport } from './routes/$workspace.projects.$projectId.kanban'
 
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/$workspace',
+  path: '/$workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceTimelineRoute = WorkspaceTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceSettingsRoute = WorkspaceSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceInboxRoute = WorkspaceInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceCalendarRoute = WorkspaceCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceProjectsIndexRoute = WorkspaceProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceProjectsProjectIdRoute =
+  WorkspaceProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
+    getParentRoute: () => WorkspaceRoute,
+  } as any)
+const WorkspaceProjectsProjectIdIndexRoute =
+  WorkspaceProjectsProjectIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => WorkspaceProjectsProjectIdRoute,
+  } as any)
+const WorkspaceProjectsProjectIdTimelineRoute =
+  WorkspaceProjectsProjectIdTimelineRouteImport.update({
+    id: '/timeline',
+    path: '/timeline',
+    getParentRoute: () => WorkspaceProjectsProjectIdRoute,
+  } as any)
+const WorkspaceProjectsProjectIdTasksRoute =
+  WorkspaceProjectsProjectIdTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
+    getParentRoute: () => WorkspaceProjectsProjectIdRoute,
+  } as any)
+const WorkspaceProjectsProjectIdSettingsRoute =
+  WorkspaceProjectsProjectIdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => WorkspaceProjectsProjectIdRoute,
+  } as any)
+const WorkspaceProjectsProjectIdKanbanRoute =
+  WorkspaceProjectsProjectIdKanbanRouteImport.update({
+    id: '/kanban',
+    path: '/kanban',
+    getParentRoute: () => WorkspaceProjectsProjectIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$workspace': typeof WorkspaceRouteWithChildren
+  '/$workspace/calendar': typeof WorkspaceCalendarRoute
+  '/$workspace/inbox': typeof WorkspaceInboxRoute
+  '/$workspace/settings': typeof WorkspaceSettingsRoute
+  '/$workspace/timeline': typeof WorkspaceTimelineRoute
+  '/$workspace/': typeof WorkspaceIndexRoute
+  '/$workspace/projects/$projectId': typeof WorkspaceProjectsProjectIdRouteWithChildren
+  '/$workspace/projects/': typeof WorkspaceProjectsIndexRoute
+  '/$workspace/projects/$projectId/kanban': typeof WorkspaceProjectsProjectIdKanbanRoute
+  '/$workspace/projects/$projectId/settings': typeof WorkspaceProjectsProjectIdSettingsRoute
+  '/$workspace/projects/$projectId/tasks': typeof WorkspaceProjectsProjectIdTasksRoute
+  '/$workspace/projects/$projectId/timeline': typeof WorkspaceProjectsProjectIdTimelineRoute
+  '/$workspace/projects/$projectId/': typeof WorkspaceProjectsProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$workspace/calendar': typeof WorkspaceCalendarRoute
+  '/$workspace/inbox': typeof WorkspaceInboxRoute
+  '/$workspace/settings': typeof WorkspaceSettingsRoute
+  '/$workspace/timeline': typeof WorkspaceTimelineRoute
+  '/$workspace': typeof WorkspaceIndexRoute
+  '/$workspace/projects': typeof WorkspaceProjectsIndexRoute
+  '/$workspace/projects/$projectId/kanban': typeof WorkspaceProjectsProjectIdKanbanRoute
+  '/$workspace/projects/$projectId/settings': typeof WorkspaceProjectsProjectIdSettingsRoute
+  '/$workspace/projects/$projectId/tasks': typeof WorkspaceProjectsProjectIdTasksRoute
+  '/$workspace/projects/$projectId/timeline': typeof WorkspaceProjectsProjectIdTimelineRoute
+  '/$workspace/projects/$projectId': typeof WorkspaceProjectsProjectIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$workspace': typeof WorkspaceRouteWithChildren
+  '/$workspace/calendar': typeof WorkspaceCalendarRoute
+  '/$workspace/inbox': typeof WorkspaceInboxRoute
+  '/$workspace/settings': typeof WorkspaceSettingsRoute
+  '/$workspace/timeline': typeof WorkspaceTimelineRoute
+  '/$workspace/': typeof WorkspaceIndexRoute
+  '/$workspace/projects/$projectId': typeof WorkspaceProjectsProjectIdRouteWithChildren
+  '/$workspace/projects/': typeof WorkspaceProjectsIndexRoute
+  '/$workspace/projects/$projectId/kanban': typeof WorkspaceProjectsProjectIdKanbanRoute
+  '/$workspace/projects/$projectId/settings': typeof WorkspaceProjectsProjectIdSettingsRoute
+  '/$workspace/projects/$projectId/tasks': typeof WorkspaceProjectsProjectIdTasksRoute
+  '/$workspace/projects/$projectId/timeline': typeof WorkspaceProjectsProjectIdTimelineRoute
+  '/$workspace/projects/$projectId/': typeof WorkspaceProjectsProjectIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/$workspace'
+    | '/$workspace/calendar'
+    | '/$workspace/inbox'
+    | '/$workspace/settings'
+    | '/$workspace/timeline'
+    | '/$workspace/'
+    | '/$workspace/projects/$projectId'
+    | '/$workspace/projects/'
+    | '/$workspace/projects/$projectId/kanban'
+    | '/$workspace/projects/$projectId/settings'
+    | '/$workspace/projects/$projectId/tasks'
+    | '/$workspace/projects/$projectId/timeline'
+    | '/$workspace/projects/$projectId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/$workspace/calendar'
+    | '/$workspace/inbox'
+    | '/$workspace/settings'
+    | '/$workspace/timeline'
+    | '/$workspace'
+    | '/$workspace/projects'
+    | '/$workspace/projects/$projectId/kanban'
+    | '/$workspace/projects/$projectId/settings'
+    | '/$workspace/projects/$projectId/tasks'
+    | '/$workspace/projects/$projectId/timeline'
+    | '/$workspace/projects/$projectId'
+  id:
+    | '__root__'
+    | '/'
+    | '/$workspace'
+    | '/$workspace/calendar'
+    | '/$workspace/inbox'
+    | '/$workspace/settings'
+    | '/$workspace/timeline'
+    | '/$workspace/'
+    | '/$workspace/projects/$projectId'
+    | '/$workspace/projects/'
+    | '/$workspace/projects/$projectId/kanban'
+    | '/$workspace/projects/$projectId/settings'
+    | '/$workspace/projects/$projectId/tasks'
+    | '/$workspace/projects/$projectId/timeline'
+    | '/$workspace/projects/$projectId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  WorkspaceRoute: typeof WorkspaceRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/$workspace': {
+      id: '/$workspace'
+      path: '/$workspace'
+      fullPath: '/$workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +218,145 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$workspace/': {
+      id: '/$workspace/'
+      path: '/'
+      fullPath: '/$workspace/'
+      preLoaderRoute: typeof WorkspaceIndexRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/$workspace/timeline': {
+      id: '/$workspace/timeline'
+      path: '/timeline'
+      fullPath: '/$workspace/timeline'
+      preLoaderRoute: typeof WorkspaceTimelineRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/$workspace/settings': {
+      id: '/$workspace/settings'
+      path: '/settings'
+      fullPath: '/$workspace/settings'
+      preLoaderRoute: typeof WorkspaceSettingsRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/$workspace/inbox': {
+      id: '/$workspace/inbox'
+      path: '/inbox'
+      fullPath: '/$workspace/inbox'
+      preLoaderRoute: typeof WorkspaceInboxRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/$workspace/calendar': {
+      id: '/$workspace/calendar'
+      path: '/calendar'
+      fullPath: '/$workspace/calendar'
+      preLoaderRoute: typeof WorkspaceCalendarRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/$workspace/projects/': {
+      id: '/$workspace/projects/'
+      path: '/projects'
+      fullPath: '/$workspace/projects/'
+      preLoaderRoute: typeof WorkspaceProjectsIndexRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/$workspace/projects/$projectId': {
+      id: '/$workspace/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/$workspace/projects/$projectId'
+      preLoaderRoute: typeof WorkspaceProjectsProjectIdRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/$workspace/projects/$projectId/': {
+      id: '/$workspace/projects/$projectId/'
+      path: '/'
+      fullPath: '/$workspace/projects/$projectId/'
+      preLoaderRoute: typeof WorkspaceProjectsProjectIdIndexRouteImport
+      parentRoute: typeof WorkspaceProjectsProjectIdRoute
+    }
+    '/$workspace/projects/$projectId/timeline': {
+      id: '/$workspace/projects/$projectId/timeline'
+      path: '/timeline'
+      fullPath: '/$workspace/projects/$projectId/timeline'
+      preLoaderRoute: typeof WorkspaceProjectsProjectIdTimelineRouteImport
+      parentRoute: typeof WorkspaceProjectsProjectIdRoute
+    }
+    '/$workspace/projects/$projectId/tasks': {
+      id: '/$workspace/projects/$projectId/tasks'
+      path: '/tasks'
+      fullPath: '/$workspace/projects/$projectId/tasks'
+      preLoaderRoute: typeof WorkspaceProjectsProjectIdTasksRouteImport
+      parentRoute: typeof WorkspaceProjectsProjectIdRoute
+    }
+    '/$workspace/projects/$projectId/settings': {
+      id: '/$workspace/projects/$projectId/settings'
+      path: '/settings'
+      fullPath: '/$workspace/projects/$projectId/settings'
+      preLoaderRoute: typeof WorkspaceProjectsProjectIdSettingsRouteImport
+      parentRoute: typeof WorkspaceProjectsProjectIdRoute
+    }
+    '/$workspace/projects/$projectId/kanban': {
+      id: '/$workspace/projects/$projectId/kanban'
+      path: '/kanban'
+      fullPath: '/$workspace/projects/$projectId/kanban'
+      preLoaderRoute: typeof WorkspaceProjectsProjectIdKanbanRouteImport
+      parentRoute: typeof WorkspaceProjectsProjectIdRoute
+    }
   }
 }
 
+interface WorkspaceProjectsProjectIdRouteChildren {
+  WorkspaceProjectsProjectIdKanbanRoute: typeof WorkspaceProjectsProjectIdKanbanRoute
+  WorkspaceProjectsProjectIdSettingsRoute: typeof WorkspaceProjectsProjectIdSettingsRoute
+  WorkspaceProjectsProjectIdTasksRoute: typeof WorkspaceProjectsProjectIdTasksRoute
+  WorkspaceProjectsProjectIdTimelineRoute: typeof WorkspaceProjectsProjectIdTimelineRoute
+  WorkspaceProjectsProjectIdIndexRoute: typeof WorkspaceProjectsProjectIdIndexRoute
+}
+
+const WorkspaceProjectsProjectIdRouteChildren: WorkspaceProjectsProjectIdRouteChildren =
+  {
+    WorkspaceProjectsProjectIdKanbanRoute:
+      WorkspaceProjectsProjectIdKanbanRoute,
+    WorkspaceProjectsProjectIdSettingsRoute:
+      WorkspaceProjectsProjectIdSettingsRoute,
+    WorkspaceProjectsProjectIdTasksRoute: WorkspaceProjectsProjectIdTasksRoute,
+    WorkspaceProjectsProjectIdTimelineRoute:
+      WorkspaceProjectsProjectIdTimelineRoute,
+    WorkspaceProjectsProjectIdIndexRoute: WorkspaceProjectsProjectIdIndexRoute,
+  }
+
+const WorkspaceProjectsProjectIdRouteWithChildren =
+  WorkspaceProjectsProjectIdRoute._addFileChildren(
+    WorkspaceProjectsProjectIdRouteChildren,
+  )
+
+interface WorkspaceRouteChildren {
+  WorkspaceCalendarRoute: typeof WorkspaceCalendarRoute
+  WorkspaceInboxRoute: typeof WorkspaceInboxRoute
+  WorkspaceSettingsRoute: typeof WorkspaceSettingsRoute
+  WorkspaceTimelineRoute: typeof WorkspaceTimelineRoute
+  WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  WorkspaceProjectsProjectIdRoute: typeof WorkspaceProjectsProjectIdRouteWithChildren
+  WorkspaceProjectsIndexRoute: typeof WorkspaceProjectsIndexRoute
+}
+
+const WorkspaceRouteChildren: WorkspaceRouteChildren = {
+  WorkspaceCalendarRoute: WorkspaceCalendarRoute,
+  WorkspaceInboxRoute: WorkspaceInboxRoute,
+  WorkspaceSettingsRoute: WorkspaceSettingsRoute,
+  WorkspaceTimelineRoute: WorkspaceTimelineRoute,
+  WorkspaceIndexRoute: WorkspaceIndexRoute,
+  WorkspaceProjectsProjectIdRoute: WorkspaceProjectsProjectIdRouteWithChildren,
+  WorkspaceProjectsIndexRoute: WorkspaceProjectsIndexRoute,
+}
+
+const WorkspaceRouteWithChildren = WorkspaceRoute._addFileChildren(
+  WorkspaceRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  WorkspaceRoute: WorkspaceRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
