@@ -1,4 +1,5 @@
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { Id } from "../_generated/dataModel";
 import { authComponent, createAuth } from "../betterAuth/auth";
 
 /**
@@ -59,5 +60,45 @@ export async function getAppUserIdOrNull(ctx: QueryCtx | MutationCtx) {
     return await getAppUserId(ctx);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Assert that the user is a member of the workspace.
+ */
+export async function assertWorkspaceMember(
+  ctx: QueryCtx | MutationCtx,
+  workspaceId: Id<"workspaces">,
+  userId: Id<"users">,
+) {
+  const membership = await ctx.db
+    .query("workspaceMembers")
+    .withIndex("by_workspace_user", (q) =>
+      q.eq("workspaceId", workspaceId).eq("userId", userId),
+    )
+    .unique();
+
+  if (!membership) {
+    throw new Error("You must be a workspace member to perform this action");
+  }
+}
+
+/**
+ * Assert that the user is an admin of the workspace.
+ */
+export async function assertWorkspaceAdmin(
+  ctx: QueryCtx | MutationCtx,
+  workspaceId: Id<"workspaces">,
+  userId: Id<"users">,
+) {
+  const membership = await ctx.db
+    .query("workspaceMembers")
+    .withIndex("by_workspace_user", (q) =>
+      q.eq("workspaceId", workspaceId).eq("userId", userId),
+    )
+    .unique();
+
+  if (!membership || membership.role !== "admin") {
+    throw new Error("You must be a workspace admin to perform this action");
   }
 }

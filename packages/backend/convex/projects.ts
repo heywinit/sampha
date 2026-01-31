@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getAppUserId } from "./lib/auth";
+import { getAppUserId, assertWorkspaceMember, assertWorkspaceAdmin } from "./lib/auth";
 
 // ============================================================================
 // QUERIES
@@ -86,19 +86,9 @@ export const update = mutation({
 
     const { projectId, ...updates } = args;
 
-    // Filter out undefined values
-    const filteredUpdates: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(updates)) {
-      if (value !== undefined) {
-        filteredUpdates[key] = value;
-      }
+    if (Object.values(updates).some((v) => v !== undefined)) {
+      await ctx.db.patch(projectId, updates);
     }
-
-    if (Object.keys(filteredUpdates).length === 0) {
-      return projectId;
-    }
-
-    await ctx.db.patch(projectId, filteredUpdates);
     return projectId;
   },
 });
@@ -144,34 +134,3 @@ export const remove = mutation({
 // HELPERS
 // ============================================================================
 
-/**
- * Assert that the user is a member of the workspace.
- */
-async function assertWorkspaceMember(ctx: { db: any }, workspaceId: any, userId: any) {
-  const membership = await ctx.db
-    .query("workspaceMembers")
-    .withIndex("by_workspace_user", (q: any) =>
-      q.eq("workspaceId", workspaceId).eq("userId", userId),
-    )
-    .unique();
-
-  if (!membership) {
-    throw new Error("You must be a workspace member to perform this action");
-  }
-}
-
-/**
- * Assert that the user is an admin of the workspace.
- */
-async function assertWorkspaceAdmin(ctx: { db: any }, workspaceId: any, userId: any) {
-  const membership = await ctx.db
-    .query("workspaceMembers")
-    .withIndex("by_workspace_user", (q: any) =>
-      q.eq("workspaceId", workspaceId).eq("userId", userId),
-    )
-    .unique();
-
-  if (!membership || membership.role !== "admin") {
-    throw new Error("You must be a workspace admin to perform this action");
-  }
-}

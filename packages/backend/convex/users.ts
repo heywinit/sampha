@@ -34,7 +34,10 @@ export const get = query({
  */
 export const list = query({
   handler: async (ctx) => {
-    return await ctx.db.query("users").collect();
+    return await ctx.db
+      .query("users")
+      .filter((q) => q.neq(q.field("isDeleted"), true))
+      .collect();
   },
 });
 
@@ -61,6 +64,7 @@ export const syncFromAuth = mutation({
       await ctx.db.patch(existingUser._id, {
         name: authUser.name,
         avatarUrl: authUser.image ?? undefined,
+        isDeleted: false,
       });
       return existingUser._id;
     }
@@ -88,12 +92,8 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const userId = await getAppUserId(ctx);
 
-    const updates: Record<string, unknown> = {};
-    if (args.name !== undefined) updates.name = args.name;
-    if (args.avatarUrl !== undefined) updates.avatarUrl = args.avatarUrl;
-
-    if (Object.keys(updates).length > 0) {
-      await ctx.db.patch(userId, updates);
+    if (Object.values(args).some((v) => v !== undefined)) {
+      await ctx.db.patch(userId, args);
     }
 
     return userId;
@@ -106,7 +106,7 @@ export const update = mutation({
 export const remove = mutation({
   handler: async (ctx) => {
     const userId = await getAppUserId(ctx);
-    await ctx.db.delete(userId);
+    await ctx.db.patch(userId, { isDeleted: true });
     return userId;
   },
 });

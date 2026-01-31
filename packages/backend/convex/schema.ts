@@ -25,6 +25,7 @@ export default defineSchema({
     email: v.string(),
     avatarUrl: v.optional(v.string()),
     createdAt: v.number(),
+    isDeleted: v.optional(v.boolean()),
   }).index("by_email", ["email"]),
 
   userPreferences: defineTable({
