@@ -17,8 +17,14 @@ export const authComponent = createClient<DataModel, typeof schema>(components.b
 // Better Auth Options
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   const baseURL =
-    process.env.CONVEX_SITE_URL || process.env.SITE_URL || "https://intent-cobra-309.convex.site";
+    process.env.CONVEX_SITE_URL || process.env.SITE_URL || "https://astute-turtle-662.convex.site";
   const secret = process.env.BETTER_AUTH_SECRET;
+
+  if (process.env.CONVEX_SCHEMA) {
+    console.log("Initializing Better Auth with baseURL:", baseURL);
+    console.log("BETTER_AUTH_SECRET present:", !!secret);
+    console.log("CONVEX_SITE_URL:", process.env.CONVEX_SITE_URL);
+  }
 
   if (!secret) {
     console.error("BETTER_AUTH_SECRET is missing. Auth will not function correctly.");
