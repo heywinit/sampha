@@ -5,20 +5,17 @@ import {
   ChevronsRight,
   Inbox,
   Calendar,
-  CheckSquare,
   Settings,
   Layers,
   Clock,
-  Search,
   Command,
-  Briefcase,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface NavItem {
@@ -34,6 +31,8 @@ export function FloatingNav() {
   const params = useParams({ from: "/$workspace" }) as { workspace: string };
   const workspace = params.workspace || "default";
   const location = useLocation();
+
+  const { data: session, isPending } = authClient.useSession();
 
   const navItems: NavItem[] = [
     {
@@ -67,11 +66,18 @@ export function FloatingNav() {
   // Toggle function
   const toggle = () => setIsExpanded(!isExpanded);
 
+  const handleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "github",
+      callbackURL: window.location.href, // Redirect back to current page
+    });
+  };
+
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "fixed left-4 top-6 z-40 flex flex-col gap-2 rounded-2xl border bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 ease-in-out",
+          "fixed left-4 top-6 z-40 flex flex-col gap-1 rounded-2xl border bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 ease-in-out",
           isExpanded ? "w-64 p-3" : "w-14 items-center py-3 px-0",
         )}
         style={{ height: "fit-content", maxHeight: "calc(100vh - 32px)" }}
@@ -89,9 +95,9 @@ export function FloatingNav() {
                   <Link
                     to={item.href}
                     className={cn(
-                      "group flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors hover:bg-accent/50 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "group flex items-center gap-3 rounded-lg px-2 py-1 text-sm font-medium transition-colors hover:bg-accent/50 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
-                      !isExpanded && "justify-center px-0 w-9 h-9",
+                      !isExpanded && "justify-center px-0 w-9 px-0",
                     )}
                   >
                     <item.icon
@@ -127,45 +133,129 @@ export function FloatingNav() {
               </Tooltip>
             );
           })}
-          {isExpanded ? (
-            <div
-              className={cn(
-                "group flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors hover:bg-accent/50 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                !isExpanded && "justify-center px-0 w-9 h-9",
-              )}
-            >
-              <Command
-                className={cn("shrink-0 transition-all", isExpanded ? "h-4 w-4" : "h-5 w-5")}
-              />
-              <span className="flex-1 truncate transition-all duration-300 animate-in fade-in slide-in-from-left-2">
-                Cmd+K
-              </span>
-            </div>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                  <Command className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Command Menu</TooltipContent>
-            </Tooltip>
-          )}
+
+          {/* Cmd+K Button - styled like other nav items */}
+          <Tooltip disableHoverableContent={true}>
+            <TooltipTrigger asChild>
+              <button
+                className={cn(
+                  "group flex items-center gap-3 rounded-lg px-2 py-1 text-sm font-medium transition-colors hover:bg-accent/50 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring w-full",
+                  !isExpanded && "justify-center px-0 w-9 h-9",
+                  "text-muted-foreground",
+                )}
+                // onClick={() => toggleCommandPalette()} // Add your command palette toggle logic here
+              >
+                <Command
+                  className={cn("shrink-0 transition-all", isExpanded ? "h-4 w-4" : "h-5 w-5")}
+                />
+                {isExpanded && (
+                  <span className="flex-1 text-left truncate transition-all duration-300 animate-in fade-in slide-in-from-left-2">
+                    Cmd+K
+                  </span>
+                )}
+              </button>
+            </TooltipTrigger>
+            {!isExpanded && <TooltipContent side="right">Command Menu</TooltipContent>}
+          </Tooltip>
         </nav>
 
-        {/* Collapse/Expand Component & Command Hint */}
+        {/* Spacer to push user profile to bottom */}
+        <div className="flex-1" />
+
+        {/* User Profile / Sign In */}
         <div
           className={cn(
-            "mt-2 flex items-center",
-            isExpanded ? "justify-between px-2" : "flex-col gap-3",
+            "mt-auto flex flex-col gap-2 pt-2 border-t border-border/40",
+            isExpanded ? "items-stretch" : "items-center",
           )}
         >
+          {isPending ? (
+            <div
+              className={cn(
+                "flex items-center gap-2 px-2 py-1",
+                !isExpanded && "justify-center px-0",
+              )}
+            >
+              <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+              {isExpanded && <div className="h-4 w-24 rounded bg-muted animate-pulse" />}
+            </div>
+          ) : session ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "h-auto p-1.5 hover:bg-accent hover:text-accent-foreground w-full",
+                    isExpanded
+                      ? "justify-start gap-3 px-2"
+                      : "justify-center w-9 h-9 px-0 rounded-full",
+                  )}
+                >
+                  <Avatar className="h-6 w-6 rounded-full border border-border/50">
+                    <AvatarFallback className="text-[10px]">
+                      {session.user.name?.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                    {/* user image if available */}
+                  </Avatar>
+                  {isExpanded && (
+                    <div className="flex flex-1 flex-col items-start overflow-hidden text-left transition-all duration-300 animate-in fade-in">
+                      <span className="text-xs font-semibold leading-tight truncate w-full">
+                        {session.user.name}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground truncate w-full">
+                        {session.user.email}
+                      </span>
+                    </div>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent side="right" className="w-56 p-2">
+                <div className="flex flex-col gap-1">
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                    {session.user.email}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start h-8 px-2 text-xs"
+                    onClick={() => authClient.signOut()}
+                  >
+                    Sign out
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <Tooltip disableHoverableContent={true}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  onClick={handleSignIn}
+                  className={cn(
+                    "h-auto p-1.5 hover:bg-accent hover:text-accent-foreground w-full",
+                    isExpanded ? "justify-start gap-3 px-2" : "justify-center w-9 h-9 px-0",
+                  )}
+                >
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs shadow-sm">
+                    ?
+                  </div>
+                  {isExpanded && (
+                    <span className="text-xs font-semibold leading-tight truncate">Sign In</span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              {!isExpanded && <TooltipContent side="right">Sign In</TooltipContent>}
+            </Tooltip>
+          )}
+
+          {/* Collapse Toggle */}
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              "h-6 w-6 text-muted-foreground hover:text-foreground",
-              !isExpanded && "h-8 w-8",
+              "h-6 w-full text-muted-foreground hover:text-foreground mt-1",
+              !isExpanded && "h-6 w-6 rounded-full",
+              isExpanded && "justify-end pr-2 hover:bg-transparent",
             )}
             onClick={toggle}
           >

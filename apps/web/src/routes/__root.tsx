@@ -3,7 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { ConvexProvider } from "convex/react";
+import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -37,6 +37,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         rel: "stylesheet",
         href: appCss,
       },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      },
     ],
   }),
 
@@ -44,9 +48,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootDocument() {
-  const { convexQueryClient } = Route.useRouteContext();
+  // const { convexQueryClient } = Route.useRouteContext();
   return (
-    <ConvexProvider client={convexQueryClient.convexClient}>
+    <ConvexClientProvider>
       <html lang="en" className="dark">
         <head>
           <HeadContent />
@@ -60,6 +64,6 @@ function RootDocument() {
           <Scripts />
         </body>
       </html>
-    </ConvexProvider>
+    </ConvexClientProvider>
   );
 }
