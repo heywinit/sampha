@@ -64,6 +64,22 @@ export async function getAppUserIdOrNull(ctx: QueryCtx | MutationCtx) {
 }
 
 /**
+ * Get the membership document for a user in a workspace.
+ */
+export async function getWorkspaceMembership(
+  ctx: QueryCtx | MutationCtx,
+  workspaceId: Id<"workspaces">,
+  userId: Id<"users">,
+) {
+  return await ctx.db
+    .query("workspaceMembers")
+    .withIndex("by_workspace_user", (q) =>
+      q.eq("workspaceId", workspaceId).eq("userId", userId),
+    )
+    .unique();
+}
+
+/**
  * Assert that the user is a member of the workspace.
  */
 export async function assertWorkspaceMember(
@@ -71,16 +87,13 @@ export async function assertWorkspaceMember(
   workspaceId: Id<"workspaces">,
   userId: Id<"users">,
 ) {
-  const membership = await ctx.db
-    .query("workspaceMembers")
-    .withIndex("by_workspace_user", (q) =>
-      q.eq("workspaceId", workspaceId).eq("userId", userId),
-    )
-    .unique();
+  const membership = await getWorkspaceMembership(ctx, workspaceId, userId);
 
   if (!membership) {
     throw new Error("You must be a workspace member to perform this action");
   }
+
+  return membership;
 }
 
 /**
@@ -91,14 +104,11 @@ export async function assertWorkspaceAdmin(
   workspaceId: Id<"workspaces">,
   userId: Id<"users">,
 ) {
-  const membership = await ctx.db
-    .query("workspaceMembers")
-    .withIndex("by_workspace_user", (q) =>
-      q.eq("workspaceId", workspaceId).eq("userId", userId),
-    )
-    .unique();
+  const membership = await getWorkspaceMembership(ctx, workspaceId, userId);
 
   if (!membership || membership.role !== "admin") {
     throw new Error("You must be a workspace admin to perform this action");
   }
+
+  return membership;
 }
