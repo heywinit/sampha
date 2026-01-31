@@ -97,7 +97,7 @@ export function FloatingNav() {
                     className={cn(
                       "group flex items-center gap-3 rounded-lg px-2 py-1 text-sm font-medium transition-colors hover:bg-accent/50 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
-                      !isExpanded && "justify-center px-0 w-9 px-0",
+                      !isExpanded && "justify-center px-0 w-9 py-2",
                     )}
                   >
                     <item.icon
