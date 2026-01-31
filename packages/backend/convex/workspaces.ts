@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAppUserId, assertWorkspaceAdmin } from "./lib/auth";
+import { deleteProject } from "./lib/deletion";
 
 export const list = query({
    args: {},
@@ -204,47 +205,11 @@ export const remove = mutation({
       .collect();
 
     await Promise.all(
-      projects.map(async (project) => {
-        // Delete phases
-        const phases = await ctx.db
-          .query("phases")
-          .withIndex("by_project", (q) => q.eq("projectId", project._id))
-          .collect();
-        for (const phase of phases) {
-          await ctx.db.delete(phase._id);
-        }
-
-        // Delete user workspace states related to this project
-        // Note: userWorkspaceStates are also deleted by workspaceId below,
-        // but we might want to be thorough if they referenced specific projects.
-        // However, the schema deletion by workspaceId covers the main userWorkspaceState entries.
-
-        await ctx.db.delete(project._id);
-      }),
+      projects.map((project) => deleteProject(ctx, project._id))
     );
     
-    // 3. Delete tasks and their related data
-    const tasks = await ctx.db
-      .query("tasks")
-      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-      .collect();
-      
-    await Promise.all(
-      tasks.map(async (task) => {
-        // Delete subtasks
-        const subtasks = await ctx.db
-          .query("subtasks")
-          .withIndex("by_task", (q) => q.eq("taskId", task._id))
-          .collect();
-        for (const subtask of subtasks) {
-          await ctx.db.delete(subtask._id);
-        }
-
-        await ctx.db.delete(task._id);
-      }),
-    );
-
-    // 4. Delete other direct children
+    // 3. Delete other direct children that might not be project-specific
+    // (Though most are deleted by deleteProject above, these serve as a catch-all)
     
     // Task Dependencies
     const taskDependencies = await ctx.db
