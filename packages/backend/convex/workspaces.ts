@@ -188,52 +188,44 @@ export const remove = mutation({
 
     const workspaceId = args.workspaceId;
 
-    // 1. Delete all workspace members
-    const members = await ctx.db
-      .query("workspaceMembers")
-      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-      .collect();
+    // 1. Get all related entities in parallel
+    const [members, projects, notifications, githubConnections, statusConfigs, states] =
+      await Promise.all([
+        ctx.db
+          .query("workspaceMembers")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+          .collect(),
+        ctx.db
+          .query("projects")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+          .collect(),
+        ctx.db
+          .query("notifications")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+          .collect(),
+        ctx.db
+          .query("githubConnections")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+          .collect(),
+        ctx.db
+          .query("statusConfigs")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+          .collect(),
+        ctx.db
+          .query("userWorkspaceStates")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+          .collect(),
+      ]);
 
-    await Promise.all(members.map((member) => ctx.db.delete(member._id)));
-
-    // 2. Delete all projects and their related data
-    const projects = await ctx.db
-      .query("projects")
-      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-      .collect();
-
-    await Promise.all(projects.map((project) => deleteProject(ctx, project._id)));
-
-    // 3. Delete other direct children that are workspace-level entities
-
-    // Notifications
-    const notifications = await ctx.db
-      .query("notifications")
-      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-      .collect();
-
-    await Promise.all(notifications.map((notification) => ctx.db.delete(notification._id)));
-
-    // Github Connections
-    const githubConnections = await ctx.db
-      .query("githubConnections")
-      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-      .collect();
-    await Promise.all(githubConnections.map((conn) => ctx.db.delete(conn._id)));
-
-    // Status Configs
-    const statusConfigs = await ctx.db
-      .query("statusConfigs")
-      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-      .collect();
-    await Promise.all(statusConfigs.map((config) => ctx.db.delete(config._id)));
-
-    // Cleanup UserWorkspaceStates
-    const states = await ctx.db
-      .query("userWorkspaceStates")
-      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-      .collect();
-    await Promise.all(states.map((state) => ctx.db.delete(state._id)));
+    // 2. Delete all entities in parallel
+    await Promise.all([
+      ...members.map((member) => ctx.db.delete(member._id)),
+      ...projects.map((project) => deleteProject(ctx, project._id)),
+      ...notifications.map((notification) => ctx.db.delete(notification._id)),
+      ...githubConnections.map((conn) => ctx.db.delete(conn._id)),
+      ...statusConfigs.map((config) => ctx.db.delete(config._id)),
+      ...states.map((state) => ctx.db.delete(state._id)),
+    ]);
 
     await ctx.db.delete(workspaceId);
     return workspaceId;
