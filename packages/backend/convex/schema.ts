@@ -26,7 +26,8 @@ export default defineSchema({
     avatarUrl: v.optional(v.string()),
     createdAt: v.number(),
     isDeleted: v.optional(v.boolean()),
-  }).index("by_email", ["email"])
+  })
+    .index("by_email", ["email"])
     .index("by_isDeleted", ["isDeleted"]),
 
   userPreferences: defineTable({
@@ -99,7 +100,9 @@ export default defineSchema({
     lastView: v.union(v.literal("timeline"), v.literal("calendar"), v.literal("kanban")),
     timelineZoomLevel: v.number(),
     collapsedProjectIds: v.array(v.id("projects")),
-  }).index("by_user_workspace", ["userId", "workspaceId"]),
+  })
+    .index("by_user_workspace", ["userId", "workspaceId"])
+    .index("by_workspace", ["workspaceId"]),
 
   comments: defineTable({
     workspaceId: v.id("workspaces"),

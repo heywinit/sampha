@@ -4,34 +4,34 @@ import { getAppUserId, assertWorkspaceAdmin } from "./lib/auth";
 import { deleteProject } from "./lib/deletion";
 
 export const list = query({
-   args: {},
-    handler: async (ctx) => {
-      const identity = await ctx.auth.getUserIdentity();
-      if (!identity || !identity.email) {
-        return [];
-      }
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || !identity.email) {
+      return [];
+    }
 
-      // Find the user in the main 'users' table by email
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_email", (q) => q.eq("email", identity.email!))
-        .unique();
+    // Find the user in the main 'users' table by email
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .unique();
 
-      if (!user) {
-        return [];
-      }
+    if (!user) {
+      return [];
+    }
 
-      // Get all workspace memberships for this user
-      const memberships = await ctx.db
-        .query("workspaceMembers")
-        .withIndex("by_user", (q) => q.eq("userId", user._id))
-        .collect();
+    // Get all workspace memberships for this user
+    const memberships = await ctx.db
+      .query("workspaceMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
 
-        // Get the workspaces
-      const workspaces = await Promise.all(
+    // Get the workspaces
+    const workspaces = await Promise.all(
       memberships.map(async (member) => {
-          const workspace = await ctx.db.get(member.workspaceId);
-          return workspace ? { ...workspace, role: member.role } : null;
+        const workspace = await ctx.db.get(member.workspaceId);
+        return workspace ? { ...workspace, role: member.role } : null;
       }),
     );
     return workspaces.filter((w) => w !== null);
@@ -194,9 +194,7 @@ export const remove = mutation({
       .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
       .collect();
 
-    await Promise.all(
-      members.map((member) => ctx.db.delete(member._id)),
-    );
+    await Promise.all(members.map((member) => ctx.db.delete(member._id)));
 
     // 2. Delete all projects and their related data
     const projects = await ctx.db
@@ -204,53 +202,38 @@ export const remove = mutation({
       .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
       .collect();
 
-    await Promise.all(
-      projects.map((project) => deleteProject(ctx, project._id))
-    );
-    
+    await Promise.all(projects.map((project) => deleteProject(ctx, project._id)));
+
     // 3. Delete other direct children that are workspace-level entities
-    
+
     // Notifications
     const notifications = await ctx.db
       .query("notifications")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
       .collect();
 
-    await Promise.all(
-      notifications.map((notification) => ctx.db.delete(notification._id)),
-    );
-    
+    await Promise.all(notifications.map((notification) => ctx.db.delete(notification._id)));
+
     // Github Connections
     const githubConnections = await ctx.db
-        .query("githubConnections")
-        .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-        .collect();
-    await Promise.all(
-      githubConnections.map((conn) => ctx.db.delete(conn._id)),
-    );
-    
+      .query("githubConnections")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+      .collect();
+    await Promise.all(githubConnections.map((conn) => ctx.db.delete(conn._id)));
+
     // Status Configs
     const statusConfigs = await ctx.db
-        .query("statusConfigs")
-        .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
-        .collect();
-    await Promise.all(
-      statusConfigs.map((config) => ctx.db.delete(config._id)),
-    );
-    
-    // Cleanup UserWorkspaceStates - iterating over members we found earlier
-    // Since we already have the list of members, we can try to find their states.
-    await Promise.all(
-      members.map(async (member) => {
-        const states = await ctx.db
-          .query("userWorkspaceStates")
-          .withIndex("by_user_workspace", (q) =>
-            q.eq("userId", member.userId).eq("workspaceId", workspaceId),
-          )
-          .collect();
-        await Promise.all(states.map((state) => ctx.db.delete(state._id)));
-      }),
-    );
+      .query("statusConfigs")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+      .collect();
+    await Promise.all(statusConfigs.map((config) => ctx.db.delete(config._id)));
+
+    // Cleanup UserWorkspaceStates
+    const states = await ctx.db
+      .query("userWorkspaceStates")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+      .collect();
+    await Promise.all(states.map((state) => ctx.db.delete(state._id)));
 
     await ctx.db.delete(workspaceId);
     return workspaceId;
@@ -353,4 +336,3 @@ export const updateMemberRole = mutation({
 // ============================================================================
 // HELPERS
 // ============================================================================
-

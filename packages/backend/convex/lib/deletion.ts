@@ -28,38 +28,37 @@ export async function deleteTask(ctx: MutationCtx, taskId: Id<"tasks">) {
     .query("taskDependencies")
     .withIndex("by_to_task", (q) => q.eq("toTaskId", taskId))
     .collect();
-  
-  await Promise.all(
-    [...dependenciesFrom, ...dependenciesTo].map((dep) => ctx.db.delete(dep._id))
-  );
+
+  await Promise.all([...dependenciesFrom, ...dependenciesTo].map((dep) => ctx.db.delete(dep._id)));
 
   // 4. Delete GitHub Links & External Comments
   const githubLinks = await ctx.db
     .query("githubLinks")
     .withIndex("by_task", (q) => q.eq("taskId", taskId))
     .collect();
-  
-  await Promise.all(
-    githubLinks.map(async (link) => {
-      const externalComments = await ctx.db
-        .query("externalComments")
-        .withIndex("by_github_link", (q) => q.eq("githubLinkId", link._id))
-        .collect();
-      await Promise.all(
-        externalComments.map((comment) => ctx.db.delete(comment._id))
-      );
-      await ctx.db.delete(link._id);
-    })
-  );
+
+  const externalComments = (
+    await Promise.all(
+      githubLinks.map((link) =>
+        ctx.db
+          .query("externalComments")
+          .withIndex("by_github_link", (q) => q.eq("githubLinkId", link._id))
+          .collect(),
+      ),
+    )
+  ).flat();
+
+  await Promise.all([
+    ...externalComments.map((comment) => ctx.db.delete(comment._id)),
+    ...githubLinks.map((link) => ctx.db.delete(link._id)),
+  ]);
 
   // 5. Delete task activities
   const taskActivities = await ctx.db
     .query("activities")
     .withIndex("by_entity", (q) => q.eq("entityId", taskId))
     .collect();
-  await Promise.all(
-    taskActivities.map((activity) => ctx.db.delete(activity._id))
-  );
+  await Promise.all(taskActivities.map((activity) => ctx.db.delete(activity._id)));
 
   // 6. Delete the task itself
   await ctx.db.delete(taskId);
@@ -75,19 +74,21 @@ export async function deleteProject(ctx: MutationCtx, projectId: Id<"projects">)
     .withIndex("by_project", (q) => q.eq("projectId", projectId))
     .collect();
 
-  await Promise.all(
-    phases.map(async (phase) => {
-      // Delete activities for this phase
-      const phaseActivities = await ctx.db
-        .query("activities")
-        .withIndex("by_entity", (q) => q.eq("entityId", phase._id))
-        .collect();
-      await Promise.all(
-        phaseActivities.map((activity) => ctx.db.delete(activity._id))
-      );
-      await ctx.db.delete(phase._id);
-    })
-  );
+  const phaseActivities = (
+    await Promise.all(
+      phases.map((phase) =>
+        ctx.db
+          .query("activities")
+          .withIndex("by_entity", (q) => q.eq("entityId", phase._id))
+          .collect(),
+      ),
+    )
+  ).flat();
+
+  await Promise.all([
+    ...phaseActivities.map((activity) => ctx.db.delete(activity._id)),
+    ...phases.map((phase) => ctx.db.delete(phase._id)),
+  ]);
 
   // 2. Delete project activities
   const projectActivities = await ctx.db
@@ -95,9 +96,7 @@ export async function deleteProject(ctx: MutationCtx, projectId: Id<"projects">)
     .withIndex("by_entity", (q) => q.eq("entityId", projectId))
     .collect();
 
-  await Promise.all(
-    projectActivities.map((activity) => ctx.db.delete(activity._id))
-  );
+  await Promise.all(projectActivities.map((activity) => ctx.db.delete(activity._id)));
 
   // 3. Delete tasks and their related data
   const tasks = await ctx.db
@@ -105,9 +104,7 @@ export async function deleteProject(ctx: MutationCtx, projectId: Id<"projects">)
     .withIndex("by_project", (q) => q.eq("projectId", projectId))
     .collect();
 
-  await Promise.all(
-    tasks.map((task) => deleteTask(ctx, task._id))
-  );
+  await Promise.all(tasks.map((task) => deleteTask(ctx, task._id)));
 
   // 4. Delete the project itself
   await ctx.db.delete(projectId);

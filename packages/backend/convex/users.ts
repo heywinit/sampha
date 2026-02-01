@@ -36,7 +36,7 @@ export const list = query({
   handler: async (ctx) => {
     return await ctx.db
       .query("users")
-      .filter((q) => q.neq(q.field("isDeleted"), true))
+      .withIndex("by_isDeleted", (q) => q.eq("isDeleted", false))
       .collect();
   },
 });

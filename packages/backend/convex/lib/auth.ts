@@ -73,9 +73,7 @@ export async function getWorkspaceMembership(
 ) {
   return await ctx.db
     .query("workspaceMembers")
-    .withIndex("by_workspace_user", (q) =>
-      q.eq("workspaceId", workspaceId).eq("userId", userId),
-    )
+    .withIndex("by_workspace_user", (q) => q.eq("workspaceId", workspaceId).eq("userId", userId))
     .unique();
 }
 
@@ -104,9 +102,9 @@ export async function assertWorkspaceAdmin(
   workspaceId: Id<"workspaces">,
   userId: Id<"users">,
 ) {
-  const membership = await getWorkspaceMembership(ctx, workspaceId, userId);
+  const membership = await assertWorkspaceMember(ctx, workspaceId, userId);
 
-  if (!membership || membership.role !== "admin") {
+  if (membership.role !== "admin") {
     throw new Error("You must be a workspace admin to perform this action");
   }
 
