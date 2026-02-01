@@ -10,7 +10,11 @@
 
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
+import type * as lib_auth from "../lib/auth.js";
+import type * as lib_deletion from "../lib/deletion.js";
 import type * as notifications from "../notifications.js";
+import type * as projects from "../projects.js";
+import type * as users from "../users.js";
 import type * as workspaces from "../workspaces.js";
 
 import type {
@@ -22,7 +26,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   healthCheck: typeof healthCheck;
   http: typeof http;
+  "lib/auth": typeof lib_auth;
+  "lib/deletion": typeof lib_deletion;
   notifications: typeof notifications;
+  projects: typeof projects;
+  users: typeof users;
   workspaces: typeof workspaces;
 }>;
 
