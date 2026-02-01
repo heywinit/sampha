@@ -119,18 +119,18 @@ export const remove = mutation({
 export const batchBackfillIsDeleted = internalMutation({
   args: { cursor: v.union(v.string(), v.null()), limit: v.number() },
   handler: async (ctx, args) => {
-    const { results, continueCursor, isDone } = await ctx.db
+    const { page, continueCursor, isDone } = await ctx.db
       .query("users")
       .paginate({ cursor: args.cursor, numItems: args.limit });
 
     let updatedCount = 0;
-    for (const user of results) {
+    for (const user of page) {
       if (user.isDeleted === undefined) {
         await ctx.db.patch(user._id, { isDeleted: false });
         updatedCount++;
       }
     }
-    return { updatedCount, continueCursor, isDone, totalCount: results.length };
+    return { updatedCount, continueCursor, isDone, totalCount: page.length };
   },
 });
 
