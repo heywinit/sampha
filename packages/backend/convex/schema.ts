@@ -68,6 +68,8 @@ export default defineSchema({
     assigneeIds: v.array(v.id("users")),
     watcherIds: v.array(v.id("users")),
     priority: v.optional(v.string()),
+    color: v.optional(v.string()),
+    location: v.optional(v.string()),
     createdBy: v.id("users"),
     createdAt: v.number(),
     updatedAt: v.number(),

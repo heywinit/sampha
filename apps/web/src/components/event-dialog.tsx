@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
   CalendarEvent,
+  EventColor,
 } from "./types";
 import {
   DefaultEndHour,
@@ -32,6 +33,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -65,6 +67,8 @@ export function EventDialog({
   const [allDay, setAllDay] = useState(false);
   const [status, setStatus] = useState("todo");
   const [priority, setPriority] = useState("medium");
+  const [location, setLocation] = useState("");
+  const [color, setColor] = useState<EventColor>("sky");
   const [error, setError] = useState<string | null>(null);
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
@@ -84,6 +88,8 @@ export function EventDialog({
     setAllDay(false);
     setStatus("todo");
     setPriority("medium");
+    setLocation("");
+    setColor("sky");
     setError(null);
   }, []);
 
@@ -108,6 +114,8 @@ export function EventDialog({
       setAllDay(event.allDay || false);
       setStatus(event.status || "todo");
       setPriority(event.priority || "medium");
+      setLocation(event.location || "");
+      setColor((event.color as EventColor) || "sky");
       setError(null); // Reset error when opening dialog
     } else {
       resetForm();
@@ -178,6 +186,8 @@ export function EventDialog({
       title: eventTitle,
       status,
       priority,
+      color,
+      location,
     });
   };
 
@@ -201,6 +211,50 @@ export function EventDialog({
     { value: "urgent", label: "Urgent" },
   ];
 
+  const colorOptions: Array<{
+    value: EventColor;
+    label: string;
+    bgClass: string;
+    borderClass: string;
+  }> = [
+    {
+      bgClass: "bg-sky-400 data-[state=checked]:bg-sky-400",
+      borderClass: "border-sky-400 data-[state=checked]:border-sky-400",
+      label: "Sky",
+      value: "sky",
+    },
+    {
+      bgClass: "bg-amber-400 data-[state=checked]:bg-amber-400",
+      borderClass: "border-amber-400 data-[state=checked]:border-amber-400",
+      label: "Amber",
+      value: "amber",
+    },
+    {
+      bgClass: "bg-violet-400 data-[state=checked]:bg-violet-400",
+      borderClass: "border-violet-400 data-[state=checked]:border-violet-400",
+      label: "Violet",
+      value: "violet",
+    },
+    {
+      bgClass: "bg-rose-400 data-[state=checked]:bg-rose-400",
+      borderClass: "border-rose-400 data-[state=checked]:border-rose-400",
+      label: "Rose",
+      value: "rose",
+    },
+    {
+      bgClass: "bg-emerald-400 data-[state=checked]:bg-emerald-400",
+      borderClass: "border-emerald-400 data-[state=checked]:border-emerald-400",
+      label: "Emerald",
+      value: "emerald",
+    },
+    {
+      bgClass: "bg-orange-400 data-[state=checked]:bg-orange-400",
+      borderClass: "border-orange-400 data-[state=checked]:border-orange-400",
+      label: "Orange",
+      value: "orange",
+    },
+  ];
+
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open={isOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -217,7 +271,7 @@ export function EventDialog({
             {error}
           </div>
         )}
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 overflow-y-auto max-h-[80vh]">
           <div className="*:not-first:mt-1.5">
             <Label htmlFor="title">Title</Label>
             <Input
@@ -411,6 +465,41 @@ export function EventDialog({
             />
             <Label htmlFor="all-day">All day</Label>
           </div>
+
+          <div className="*:not-first:mt-1.5">
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              onChange={(e) => setLocation(e.target.value)}
+              value={location}
+            />
+          </div>
+
+          <fieldset className="space-y-4">
+            <legend className="font-medium text-foreground text-sm leading-none">
+              Color
+            </legend>
+            <RadioGroup
+              className="flex gap-1.5"
+              defaultValue={colorOptions[0]?.value}
+              onValueChange={(value: EventColor) => setColor(value)}
+              value={color}
+            >
+              {colorOptions.map((colorOption) => (
+                <RadioGroupItem
+                  aria-label={colorOption.label}
+                  className={cn(
+                    "size-6 shadow-none",
+                    colorOption.bgClass,
+                    colorOption.borderClass,
+                  )}
+                  id={`color-${colorOption.value}`}
+                  key={colorOption.value}
+                  value={colorOption.value}
+                />
+              ))}
+            </RadioGroup>
+          </fieldset>
         </div>
         <DialogFooter className="flex-row sm:justify-between">
           {event?.id && (
@@ -423,7 +512,7 @@ export function EventDialog({
               <RiDeleteBinLine aria-hidden="true" size={16} />
             </Button>
           )}
-          <div className="flex flex-1 justify-end gap-2">
+          <div className="flex flex-1 justify-end gap-2 text-right">
             <Button onClick={onClose} variant="outline">
               Cancel
             </Button>

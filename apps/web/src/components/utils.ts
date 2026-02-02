@@ -54,7 +54,7 @@ export function getBorderRadiusClasses(
 export function isMultiDayEvent(event: CalendarEvent): boolean {
   const eventStart = new Date(event.start);
   const eventEnd = new Date(event.end);
-  return event.allDay || eventStart.getDate() !== eventEnd.getDate();
+  return event.allDay || !isSameDay(eventStart, eventEnd);
 }
 
 /**
