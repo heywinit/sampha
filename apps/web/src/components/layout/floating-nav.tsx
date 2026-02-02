@@ -128,32 +128,26 @@ export function FloatingNav() {
                       !isExpanded && "justify-center px-0 w-9 py-2",
                     )}
                   >
-                    <item.icon
-                      className={cn("shrink-0 transition-all", isExpanded ? "h-4 w-4" : "h-5 w-5")}
-                    />
+                    <div className="relative flex items-center justify-center">
+                      <item.icon
+                        className={cn("shrink-0 transition-all", isExpanded ? "h-4 w-4" : "h-5 w-5")}
+                      />
+                      {!!item.badge && (
+                        <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2 rounded-full bg-primary border border-background shadow-sm" />
+                      )}
+                    </div>
 
                     {isExpanded && (
                       <span className="flex-1 truncate transition-all duration-300 animate-in fade-in slide-in-from-left-2">
                         {item.title}
                       </span>
                     )}
-
-                    {isExpanded && item.badge && (
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        {item.badge}
-                      </span>
-                    )}
-
-                    {/* Collapsed Badge Dot */}
-                    {!isExpanded && item.badge && (
-                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
-                    )}
                   </Link>
                 </TooltipTrigger>
                 {!isExpanded && (
                   <TooltipContent side="right" className="flex items-center gap-2">
                     {item.title}
-                    {item.badge && (
+                    {!!item.badge && (
                       <span className="ml-auto text-xs text-muted-foreground">({item.badge})</span>
                     )}
                   </TooltipContent>
