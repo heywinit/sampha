@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
   CalendarEvent,
-  EventColor,
 } from "./types";
 import {
   DefaultEndHour,
@@ -33,7 +32,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -65,8 +63,8 @@ export function EventDialog({
   const [startTime, setStartTime] = useState(`${DefaultStartHour}:00`);
   const [endTime, setEndTime] = useState(`${DefaultEndHour}:00`);
   const [allDay, setAllDay] = useState(false);
-  const [location, setLocation] = useState("");
-  const [color, setColor] = useState<EventColor>("sky");
+  const [status, setStatus] = useState("todo");
+  const [priority, setPriority] = useState("medium");
   const [error, setError] = useState<string | null>(null);
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
@@ -84,8 +82,8 @@ export function EventDialog({
     setStartTime(`${DefaultStartHour}:00`);
     setEndTime(`${DefaultEndHour}:00`);
     setAllDay(false);
-    setLocation("");
-    setColor("sky");
+    setStatus("todo");
+    setPriority("medium");
     setError(null);
   }, []);
 
@@ -108,8 +106,8 @@ export function EventDialog({
       setStartTime(formatTimeForInput(start));
       setEndTime(formatTimeForInput(end));
       setAllDay(event.allDay || false);
-      setLocation(event.location || "");
-      setColor((event.color as EventColor) || "sky");
+      setStatus(event.status || "todo");
+      setPriority(event.priority || "medium");
       setError(null); // Reset error when opening dialog
     } else {
       resetForm();
@@ -173,13 +171,13 @@ export function EventDialog({
 
     onSave({
       allDay,
-      color,
       description,
       end,
       id: event?.id || "",
-      location,
       start,
       title: eventTitle,
+      status,
+      priority,
     });
   };
 
@@ -189,60 +187,29 @@ export function EventDialog({
     }
   };
 
-  // Updated color options to match types.ts
-  const colorOptions: Array<{
-    value: EventColor;
-    label: string;
-    bgClass: string;
-    borderClass: string;
-  }> = [
-    {
-      bgClass: "bg-sky-400 data-[state=checked]:bg-sky-400",
-      borderClass: "border-sky-400 data-[state=checked]:border-sky-400",
-      label: "Sky",
-      value: "sky",
-    },
-    {
-      bgClass: "bg-amber-400 data-[state=checked]:bg-amber-400",
-      borderClass: "border-amber-400 data-[state=checked]:border-amber-400",
-      label: "Amber",
-      value: "amber",
-    },
-    {
-      bgClass: "bg-violet-400 data-[state=checked]:bg-violet-400",
-      borderClass: "border-violet-400 data-[state=checked]:border-violet-400",
-      label: "Violet",
-      value: "violet",
-    },
-    {
-      bgClass: "bg-rose-400 data-[state=checked]:bg-rose-400",
-      borderClass: "border-rose-400 data-[state=checked]:border-rose-400",
-      label: "Rose",
-      value: "rose",
-    },
-    {
-      bgClass: "bg-emerald-400 data-[state=checked]:bg-emerald-400",
-      borderClass: "border-emerald-400 data-[state=checked]:border-emerald-400",
-      label: "Emerald",
-      value: "emerald",
-    },
-    {
-      bgClass: "bg-orange-400 data-[state=checked]:bg-orange-400",
-      borderClass: "border-orange-400 data-[state=checked]:border-orange-400",
-      label: "Orange",
-      value: "orange",
-    },
+  const statusOptions = [
+    { value: "todo", label: "To Do" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "done", label: "Done" },
+    { value: "cancelled", label: "Cancelled" },
+  ];
+
+  const priorityOptions = [
+    { value: "low", label: "Low" },
+    { value: "medium", label: "Medium" },
+    { value: "high", label: "High" },
+    { value: "urgent", label: "Urgent" },
   ];
 
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open={isOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{event?.id ? "Edit Event" : "Create Event"}</DialogTitle>
+          <DialogTitle>{event?.id ? "Edit Task" : "Create Task"}</DialogTitle>
           <DialogDescription className="sr-only">
             {event?.id
-              ? "Edit the details of this event"
-              : "Add a new event to your calendar"}
+              ? "Edit the details of this task"
+              : "Add a new task to your calendar"}
           </DialogDescription>
         </DialogHeader>
         {error && (
@@ -268,6 +235,39 @@ export function EventDialog({
               rows={3}
               value={description}
             />
+          </div>
+
+          <div className="flex gap-4">
+            <div className="flex-1 *:not-first:mt-1.5">
+              <Label htmlFor="status">Status</Label>
+              <Select onValueChange={setStatus} value={status}>
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 *:not-first:mt-1.5">
+              <Label htmlFor="priority">Priority</Label>
+              <Select onValueChange={setPriority} value={priority}>
+                <SelectTrigger id="priority">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {priorityOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="flex gap-4">
@@ -411,45 +411,11 @@ export function EventDialog({
             />
             <Label htmlFor="all-day">All day</Label>
           </div>
-
-          <div className="*:not-first:mt-1.5">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              onChange={(e) => setLocation(e.target.value)}
-              value={location}
-            />
-          </div>
-          <fieldset className="space-y-4">
-            <legend className="font-medium text-foreground text-sm leading-none">
-              Etiquette
-            </legend>
-            <RadioGroup
-              className="flex gap-1.5"
-              defaultValue={colorOptions[0]?.value}
-              onValueChange={(value: EventColor) => setColor(value)}
-              value={color}
-            >
-              {colorOptions.map((colorOption) => (
-                <RadioGroupItem
-                  aria-label={colorOption.label}
-                  className={cn(
-                    "size-6 shadow-none",
-                    colorOption.bgClass,
-                    colorOption.borderClass,
-                  )}
-                  id={`color-${colorOption.value}`}
-                  key={colorOption.value}
-                  value={colorOption.value}
-                />
-              ))}
-            </RadioGroup>
-          </fieldset>
         </div>
         <DialogFooter className="flex-row sm:justify-between">
           {event?.id && (
             <Button
-              aria-label="Delete event"
+              aria-label="Delete task"
               onClick={handleDelete}
               size="icon"
               variant="outline"
