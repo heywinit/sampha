@@ -28,6 +28,7 @@ export default defineSchema({
     isDeleted: v.optional(v.boolean()),
   })
     .index("by_email", ["email"])
+    .index("by_email_active", ["email", "isDeleted"])
     .index("by_isDeleted", ["isDeleted"]),
 
   userPreferences: defineTable({
@@ -68,6 +69,8 @@ export default defineSchema({
     assigneeIds: v.array(v.id("users")),
     watcherIds: v.array(v.id("users")),
     priority: v.optional(v.string()),
+    color: v.optional(v.string()),
+    location: v.optional(v.string()),
     createdBy: v.id("users"),
     createdAt: v.number(),
     updatedAt: v.number(),

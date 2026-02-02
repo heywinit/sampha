@@ -3,7 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+import { ConvexClientProvider } from "@/components";
 
 import { Toaster } from "@/components/ui/sonner";
 

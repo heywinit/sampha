@@ -72,7 +72,7 @@ function WorkspaceLayout() {
           </Breadcrumb>
         </header>
 
-        <div className="animate-in fade-in border rounded-2xl p-4 slide-in-from-bottom-4 duration-500">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
           <Outlet />
         </div>
       </main>

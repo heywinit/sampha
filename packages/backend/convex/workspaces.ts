@@ -12,10 +12,12 @@ export const list = query({
     }
 
     // Find the user in the main 'users' table by email
+    // Use the combined index and pick the most recent non-deleted user
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
+      .withIndex("by_email_active", (q) => q.eq("email", identity.email!).eq("isDeleted", false))
+      .order("desc") // Most recent first
+      .first();
 
     if (!user) {
       return [];

@@ -128,7 +128,60 @@ export const remove = mutation({
   },
 });
 
-// ============================================================================
-// HELPERS
-// ============================================================================
+/**
+ * Ensure at least one project and phase exists in a workspace.
+ */
+export const ensureDefaultProjectAndPhase = mutation({
+  args: {
+    workspaceId: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAppUserId(ctx);
+    await assertWorkspaceMember(ctx, args.workspaceId, userId);
+
+    // Check for existing projects
+    const existingProject = await ctx.db
+      .query("projects")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .first();
+
+    if (existingProject) {
+      // Check for phases in this project
+      const existingPhase = await ctx.db
+        .query("phases")
+        .withIndex("by_project", (q) => q.eq("projectId", existingProject._id))
+        .first();
+
+      if (existingPhase) {
+        return { projectId: existingProject._id, phaseId: existingPhase._id };
+      }
+
+      // Create a default phase if none exists
+      const phaseId = await ctx.db.insert("phases", {
+        projectId: existingProject._id,
+        name: "General",
+        order: 0,
+      });
+      return { projectId: existingProject._id, phaseId };
+    }
+
+    // Create a default project
+    const projectId = await ctx.db.insert("projects", {
+      workspaceId: args.workspaceId,
+      name: "General Project",
+      status: "active",
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+
+    // Create a default phase
+    const phaseId = await ctx.db.insert("phases", {
+      projectId,
+      name: "General",
+      order: 0,
+    });
+
+    return { projectId, phaseId };
+  },
+});
 

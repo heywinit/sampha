@@ -14,11 +14,14 @@ export const authComponent = createClient<DataModel, typeof schema>(components.b
   verbose: false,
 });
 
+const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET
+
 // Better Auth Options
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   const baseURL =
     process.env.BETTER_AUTH_URL || process.env.SITE_URL || process.env.CONVEX_SITE_URL;
-  const secret = process.env.BETTER_AUTH_SECRET;
+  const secret = BETTER_AUTH_SECRET;
+
 
   if (!secret) {
     console.error("BETTER_AUTH_SECRET is missing. Auth will not function correctly.");

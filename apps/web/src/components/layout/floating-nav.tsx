@@ -1,6 +1,7 @@
 import * as React from "react";
-import { Link, useLocation, useParams } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { Link, useLocation, useParams, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@sampha/backend/convex/_generated/api";
 import {
   ChevronsLeft,
@@ -11,6 +12,7 @@ import {
   Layers,
   Clock,
   Command,
+  Plus,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -19,6 +21,15 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface NavItem {
   title: string;
@@ -37,6 +48,14 @@ export function FloatingNav() {
   const { data: session, isPending } = authClient.useSession();
   const workspaces = useQuery(api.workspaces.list);
   const unreadCount = useQuery(api.notifications.getUnreadCount);
+  const syncUser = useMutation(api.users.syncFromAuth);
+
+  // Auto-sync user data when session is active
+  React.useEffect(() => {
+    if (session) {
+      syncUser().catch(err => console.error("Failed to sync user:", err));
+    }
+  }, [session, syncUser]);
 
   const navItems: NavItem[] = [
     {
@@ -91,6 +110,7 @@ export function FloatingNav() {
           isExpanded={isExpanded}
           workspaceName={workspace}
           workspaces={workspaces}
+          isAuthenticated={!!session}
         />
 
         {/* Navigation Items */}
@@ -108,32 +128,26 @@ export function FloatingNav() {
                       !isExpanded && "justify-center px-0 w-9 py-2",
                     )}
                   >
-                    <item.icon
-                      className={cn("shrink-0 transition-all", isExpanded ? "h-4 w-4" : "h-5 w-5")}
-                    />
+                    <div className="relative flex items-center justify-center">
+                      <item.icon
+                        className={cn("shrink-0 transition-all", isExpanded ? "h-4 w-4" : "h-5 w-5")}
+                      />
+                      {!!item.badge && (
+                        <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2 rounded-full bg-primary border border-background shadow-sm" />
+                      )}
+                    </div>
 
                     {isExpanded && (
                       <span className="flex-1 truncate transition-all duration-300 animate-in fade-in slide-in-from-left-2">
                         {item.title}
                       </span>
                     )}
-
-                    {isExpanded && item.badge && (
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        {item.badge}
-                      </span>
-                    )}
-
-                    {/* Collapsed Badge Dot */}
-                    {!isExpanded && item.badge && (
-                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
-                    )}
                   </Link>
                 </TooltipTrigger>
                 {!isExpanded && (
                   <TooltipContent side="right" className="flex items-center gap-2">
                     {item.title}
-                    {item.badge && (
+                    {!!item.badge && (
                       <span className="ml-auto text-xs text-muted-foreground">({item.badge})</span>
                     )}
                   </TooltipContent>
@@ -284,65 +298,175 @@ function WorkspaceSwitcher({
   isExpanded,
   workspaceName,
   workspaces,
+  isAuthenticated,
 }: {
   isExpanded: boolean;
   workspaceName: string;
   workspaces?: { name: string; slug: string }[] | null;
+  isAuthenticated: boolean;
 }) {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = React.useState("");
+  const [newWorkspaceSlug, setNewWorkspaceSlug] = React.useState("");
+  const [isSlugEdited, setIsSlugEdited] = React.useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+  const createWorkspace = useMutation(api.workspaces.create);
+  const navigate = useNavigate();
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    setNewWorkspaceName(name);
+    // Auto-generate slug from name if slug hasn't been manually edited
+    if (!isSlugEdited) {
+      setNewWorkspaceSlug(name.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewWorkspaceSlug(e.target.value);
+    setIsSlugEdited(true);
+  };
+
+  const handleCreateWorkspace = async () => {
+    if (!newWorkspaceName || !newWorkspaceSlug) {
+      toast.error("Please enter both a name and a slug.");
+      return;
+    }
+    try {
+      await createWorkspace({
+        name: newWorkspaceName,
+        slug: newWorkspaceSlug,
+        type: "private",
+      });
+      toast.success("Workspace created successfully!");
+      setIsCreateDialogOpen(false);
+      setIsPopoverOpen(false);
+      setNewWorkspaceName("");
+      setNewWorkspaceSlug("");
+      navigate({ to: "/$workspace/timeline", params: { workspace: newWorkspaceSlug } });
+    } catch (error: any) {
+      console.error("Failed to create workspace:", error);
+      const errorMessage = error.message.includes("Unauthenticated")
+        ? "Your session has expired. Signing you out..."
+        : error.message || "Failed to create workspace. Please try again.";
+      toast.error(errorMessage);
+      
+      if (error.message.includes("Unauthenticated")) {
+        await authClient.signOut();
+        window.location.reload(); // Reload to refresh state completely
+      }
+    }
+  };
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          className={cn(
-            "h-auto p-1.5 hover:bg-accent hover:text-accent-foreground",
-            isExpanded ? "justify-start w-full gap-3 px-2" : "justify-center w-10 h-10 rounded-xl",
-          )}
-        >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xs uppercase shadow-sm">
-            {workspaceName.substring(0, 2)}
-          </div>
-          {isExpanded && (
-            <div className="flex flex-1 flex-col items-start overflow-hidden text-left transition-all duration-300 animate-in fade-in">
-              <span className="text-sm font-semibold leading-tight truncate w-full">
-                {workspaceName}
-              </span>
-              <span className="text-[10px] text-muted-foreground truncate">Free Plan</span>
+    <>
+      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              "h-auto p-1.5 hover:bg-accent hover:text-accent-foreground",
+              isExpanded ? "justify-start w-full gap-3 px-2" : "justify-center w-10 h-10 rounded-xl",
+            )}
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xs uppercase shadow-sm">
+              {workspaceName.substring(0, 2)}
             </div>
-          )}
-          <span className="sr-only">Switch Workspace</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-60 p-2"
-        align={isExpanded ? "start" : "start"}
-        side={isExpanded ? "bottom" : "right"}
-      >
-        <div className="mb-2 px-2 text-xs font-medium text-muted-foreground">Switch Workspace</div>
-        <div className="flex flex-col gap-1">
-          {workspaces?.map((ws) => {
-            const slug = ws.slug;
-            const workspaceName = ws.name;
-            return (
-              <Button
-                key={slug}
-                variant="ghost"
-                className="justify-start gap-2 h-9 px-2 text-sm"
-                asChild
-              >
-                <Link to={`/${slug}/timeline`} params={{ workspace: slug }}>
-                  <Avatar className="h-5 w-5 rounded-md">
-                    <AvatarFallback className="rounded-md text-[10px]">
-                      {workspaceName.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+            {isExpanded && (
+              <div className="flex flex-1 flex-col items-start overflow-hidden text-left transition-all duration-300 animate-in fade-in">
+                <span className="text-sm font-semibold leading-tight truncate w-full">
                   {workspaceName}
-                </Link>
-              </Button>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
+                </span>
+                <span className="text-[10px] text-muted-foreground truncate">Free Plan</span>
+              </div>
+            )}
+            <span className="sr-only">Switch Workspace</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-60 p-2"
+          align={isExpanded ? "start" : "start"}
+          side={isExpanded ? "bottom" : "right"}
+        >
+          <div className="mb-2 px-2 text-xs font-medium text-muted-foreground">Switch Workspace</div>
+          <div className="flex flex-col gap-1">
+            {workspaces?.map((ws) => {
+              const slug = ws.slug;
+              const workspaceName = ws.name;
+              return (
+                <Button
+                  key={slug}
+                  variant="ghost"
+                  className="justify-start gap-2 h-9 px-2 text-sm"
+                  asChild
+                  onClick={() => setIsPopoverOpen(false)}
+                >
+                  <Link to="/$workspace/timeline" params={{ workspace: slug }}>
+                    <Avatar className="h-5 w-5 rounded-md">
+                      <AvatarFallback className="rounded-md text-[10px]">
+                        {workspaceName.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {workspaceName}
+                  </Link>
+                </Button>
+              );
+            })}
+            <div className="my-1 h-[1px] bg-border" />
+            <Button
+              variant="ghost"
+              className="justify-start gap-2 h-9 px-2 text-sm text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setIsPopoverOpen(false);
+                if (!isAuthenticated) {
+                  toast.error("Please sign in to create a workspace.");
+                  return;
+                }
+                setIsCreateDialogOpen(true);
+              }}
+            >
+              <div className="flex h-5 w-5 items-center justify-center rounded-md border border-dashed border-muted-foreground/50">
+                <Plus className="h-3 w-3" />
+              </div>
+              Create Workspace
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Workspace</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Workspace Name</Label>
+              <Input
+                id="name"
+                placeholder="Acme Corp"
+                value={newWorkspaceName}
+                onChange={handleNameChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="slug">Workspace Slug</Label>
+              <Input
+                id="slug"
+                placeholder="acme-corp"
+                value={newWorkspaceSlug}
+                onChange={handleSlugChange}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateWorkspace}>Create Workspace</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
